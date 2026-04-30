@@ -1,0 +1,858 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>流動的饗宴 - 女高音蔡澐宣獨唱會</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;1,400&family=Playfair+Display:ital,wght@0,500;0,700;1,500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        /* 基礎設定 */
+        * { box-sizing: border-box; }
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #1a1a1a;
+            font-family: 'Lora', serif;
+            color: #2C3E50;
+            overflow: hidden;
+        }
+
+        #book-container {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            background-color: #FDFBF7;
+            max-width: 600px;
+            margin: 0 auto;
+            box-shadow: 0 0 30px rgba(0,0,0,0.5);
+            overflow: hidden;
+        }
+
+        .page-border {
+            position: absolute;
+            top: 15px; left: 15px; right: 15px; bottom: 15px;
+            border: 1px solid #E5DCCB;
+            pointer-events: none;
+            z-index: 20;
+        }
+
+        .page {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            background-color: #FDFBF7;
+            opacity: 0;
+            transition: transform 0.5s cubic-bezier(0.645, 0.045, 0.355, 1), opacity 0.5s ease-in-out;
+            transform: translateX(100%);
+            z-index: 1;
+            overflow: hidden;
+        }
+
+        .page.active {
+            opacity: 1;
+            transform: translateX(0);
+            z-index: 10;
+        }
+
+        .page.prev {
+            transform: translateX(-100%);
+            opacity: 0;
+            z-index: 1;
+        }
+
+        .page-content {
+            width: 100%;
+            height: 100%;
+            padding: 45px 35px 95px 35px;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        h1, h2, h3, h4 {
+            font-family: 'Playfair Display', serif;
+            color: #8B5A2B;
+            margin: 0;
+            font-weight: 700;
+        }
+
+        .slide-title {
+            font-size: 24px;
+            margin-bottom: 25px;
+            border-bottom: 1px solid #E5DCCB;
+            padding-bottom: 15px;
+            text-align: center;
+            letter-spacing: 2px;
+        }
+
+        p {
+            line-height: 1.8;
+            margin: 0 0 15px 0;
+            font-size: 15px;
+            text-align: justify;
+        }
+
+        /* 封面 */
+        .page-cover {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            height: 100%;
+            padding: 40px 20px;
+            background-image: linear-gradient(to bottom, rgba(253, 251, 247, 0.9), rgba(253, 251, 247, 0.7)), url('https://images.unsplash.com/photo-1516280440614-37939bbacd81?q=80&w=1280&auto=format&fit=crop');
+            background-size: cover;
+            background-position: center;
+        }
+
+        .page-cover h1 {
+            font-size: 46px;
+            margin-bottom: 20px;
+            letter-spacing: 4px;
+            color: #5C3A21;
+        }
+
+        /* 歌詞區域 */
+        .composer-title {
+            font-size: 20px;
+            color: #2C3E50;
+            margin-top: 10px;
+            margin-bottom: 10px;
+            font-weight: 600;
+            text-align: center;
+            letter-spacing: 1px;
+        }
+
+        .lyric-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #8B5A2B;
+            margin-bottom: 20px;
+            padding-bottom: 8px;
+            border-bottom: 1px dashed #D3C9B8;
+            display: block;
+            text-align: center;
+        }
+
+        /* 原文區塊 */
+        .lyrics-original {
+            font-style: italic;
+            color: #666;
+            margin-bottom: 30px;
+            padding-left: 10px;
+            border-left: 2px solid #E5DCCB;
+        }
+
+        .lyrics-original p {
+            margin-bottom: 5px;
+            line-height: 1.5;
+            font-size: 14px;
+        }
+
+        /* 中文區塊 */
+        .lyrics-translation {
+            color: #1A252C;
+            padding-top: 15px;
+            border-top: 1px solid #F0E6D2;
+        }
+
+        .lyrics-translation p {
+            margin-bottom: 5px;
+            line-height: 1.6;
+            font-size: 15px;
+        }
+
+        /* 導覽列 */
+        .page-controls {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 70px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 20px;
+            background: linear-gradient(transparent, rgba(253, 251, 247, 0.95) 30%);
+            z-index: 50;
+        }
+
+        .nav-btn {
+            background: none;
+            border: none;
+            font-size: 28px;
+            color: #8B5A2B;
+            cursor: pointer;
+            padding: 10px 15px;
+            outline: none;
+        }
+
+        .nav-btn:disabled { opacity: 0.2; }
+
+        .page-indicator {
+            font-size: 14px;
+            color: #888;
+            font-family: 'Playfair Display', serif;
+        }
+
+        /* 圖片 */
+        .bio-img {
+            width: 100%;
+            height: 320px;
+            border-radius: 160px 160px 0 0;
+            object-fit: cover;
+            border: 4px solid #E5DCCB;
+            margin-bottom: 25px;
+        }
+
+        .intermission {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+<div id="book-container">
+    <div class="page-border"></div>
+
+    <!-- 頁面 1：封面 -->
+    <div class="page active">
+        <div class="page-content" style="padding: 0;">
+            <div class="page-cover">
+                <h1>流動的饗宴</h1>
+                <p style="font-size: 22px; color: #2C3E50; margin-bottom: 50px;">女高音蔡澐宣獨唱會</p>
+                <div style="font-size: 16px; line-height: 2; border-top: 1px solid #8B5A2B; padding-top: 30px; width: 85%;">
+                    2026年05月08日 五 19:30<br>
+                    臺北國家兩廳院演奏廳<br>
+                    鋼琴：許毓婷<br><br>
+                    就是愛樂管弦樂團
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 頁面 2：蔡澐宣簡介 -->
+    <div class="page">
+        <div class="page-content">
+            <h2 class="slide-title">女高音 / 蔡澐宣</h2>
+            <img src="https://images.unsplash.com/photo-1574676453903-82087599042b?q=80&w=800" alt="女高音" class="bio-img">
+            <p>實踐大學音樂系聲樂組畢業，法國國立馬爾梅嵩音樂院聲樂碩士。曾多次應邀於法國巴黎、波爾多、亞維儂、尼斯等城市舉行個人獨唱會。回國後致力投入聲樂教學與演出，多次參與台北愛樂歌劇坊、NSO、台北市立交響樂團等大型演出。</p>
+        </div>
+    </div>
+
+    <!-- 頁面 3：許毓婷簡介 -->
+    <div class="page">
+        <div class="page-content">
+            <h2 class="slide-title">鋼琴 / 許毓婷</h2>
+            <img src="https://images.unsplash.com/photo-1520527053375-af98655ad947?q=80&w=800" alt="鋼琴家" class="bio-img">
+            <p>國立臺北藝術大學音樂碩士。活躍於當今樂壇的鋼琴演奏家，曾擔任國家交響樂團鍵盤特約人員。除歌劇領域外，亦與國內外多位優秀音樂家合作，致力於多元跨界合作與編曲製作。</p>
+        </div>
+    </div>
+
+    <!-- 頁面 4：曲目 1 - 蒙帕納斯 -->
+    <div class="page">
+        <div class="page-content">
+            <h2 class="slide-title">演出曲目</h2>
+            <div class="composer-title">法蘭西斯·浦朗克</div>
+            <div class="lyric-title">Montparnasse 蒙帕納斯</div>
+            
+            <div class="lyrics-original">
+                <p>Ô porte de l'hôtel avec deux plantes vertes,</p>
+                <p>Vertes qui jamais Ne porteront de fleurs,</p>
+                <p>Où sont mes fruits? Où me planté-je?</p>
+                <p>Ô porte de l'hôtel, Un ange est devant toi</p>
+                <p>Distribuant des prospectus,</p>
+                <p>On n'a jamais si bien défendu la vertu,</p>
+                <p>Donnez-moi pour toujours une chambre à la semaine,</p>
+                <p>Ange barbu vous êtes en réalité Un poète lyrique d'Allemagne,</p>
+                <p>Qui voulez connaître Paris, Vous connaissez de son pavé</p>
+                <p>Ces raies sur lesquelles il ne faut pas que l'on marche,</p>
+                <p>Et vous rêvez D'aller passer votre Dimanche à Garches,</p>
+                <p>Il fait un peu lourd et vos cheveux sont longs,</p>
+                <p>Ô bon petit poète Un peu bête et trop blond,</p>
+                <p>Vos yeux ressemblent tant à ces deux grands ballons</p>
+                <p>Qui s'en vont dans l'air pur À l'aventure.</p>
+            </div>
+
+            <div class="lyrics-translation">
+                <p>噢，旅館大門伴著兩株綠色植物，</p>
+                <p>那永恆的綠意將不會綻放花朵，</p>
+                <p>我的果實在哪裡？我該將自己栽種於何處？</p>
+                <p>噢！旅館大門，一位天使佇立在你面前分發著傳單，</p>
+                <p>人們從未如此完美地捍衛美德。</p>
+                <p>請給我一間永遠週租的房間，</p>
+                <p>蓄鬍的天使，你實際上是一位來自德國的抒情詩人，</p>
+                <p>想要認識巴黎，你熟悉這裡的石板路，</p>
+                <p>那些人們不可踩踏的縫隙，</p>
+                <p>而您夢想著去加爾舍度過您的星期天。</p>
+                <p>天氣有些悶熱，而您的頭髮很長，</p>
+                <p>噢！善良的小詩人，有點傻氣且那金髮太過耀眼，</p>
+                <p>您的雙眼像極了那兩顆巨大的氣球，</p>
+                <p>飄向純淨的天空中，去冒險。</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 頁面 5：曲目 2 - 海德公園 -->
+    <div class="page">
+        <div class="page-content">
+            <h2 class="slide-title">演出曲目</h2>
+            <div class="composer-title">法蘭西斯·浦朗克</div>
+            <div class="lyric-title">Hyde Park 海德公園</div>
+            
+            <div class="lyrics-original">
+                <p>Les Faiseurs de religion Prêchaient dans le brouillard,</p>
+                <p>Les ombres près de qui nous passions Jouaient à collin maillard,</p>
+                <p>À soixante-dix ans Joues fraîches de petits enfants,</p>
+                <p>Venez venez Eléonore Et que sais-je encore,</p>
+                <p>Regardez venir les cyclopes Les pipes s'envolaient,</p>
+                <p>Mais envolez-vous-en Regards impénitents Et l'Europe l'Europe,</p>
+                <p>Regards sacrés Mains enamourées,</p>
+                <p>Et les amants s'aimèrent Tant que prêcheurs prêchèrent.</p>
+            </div>
+
+            <div class="lyrics-translation">
+                <p>那些宗教的製造者們，在霧中佈道，</p>
+                <p>我們身旁經過的影子，正玩著矇眼捉人的遊戲。</p>
+                <p>七十歲的年紀，孩童般鮮嫩的臉頰，</p>
+                <p>來吧，來吧，艾莉奧諾，天曉得還要說什麼。</p>
+                <p>看那獨眼巨人們走來，煙斗飛向了空中，</p>
+                <p>飛離此地吧，那不知悔改的目光，還有歐洲，歐洲。</p>
+                <p>神聖庫的目光，充滿愛意的手，</p>
+                <p>戀人們彼此相愛，就在傳教士們佈道之時。</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 頁面 6：曲目 3 - 那邦的蜂蜜 -->
+    <div class="page">
+        <div class="page-content">
+            <h2 class="slide-title">演出曲目</h2>
+            <div class="composer-title">法蘭西斯·浦朗克</div>
+            <div class="lyric-title">Miel de Narbonne 那邦的蜂蜜</div>
+            
+            <div class="lyrics-original">
+                <p>Use ton coeur,</p>
+                <p>Les clowns fleurissent du crottin d'or,</p>
+                <p>Dormir! Un coup d'orteil: on vole,</p>
+                <p>Volez-vous jouer avec moa?</p>
+                <p>"Moabite, dame de la croix-bleue.",</p>
+                <p>Caravane.,</p>
+                <p>"Vanille, Poivre, Confitures de tamarin",</p>
+                <p>"Marin, cou, le pompon, moustaches, mandoline",</p>
+                <p>Linoléum en trompe-l'oeil. Merci,</p>
+                <p>"CINÉMA, nouvelle muse."</p>
+            </div>
+
+            <div class="lyrics-translation">
+                <p>請用你的心，</p>
+                <p>小丑們如花般的綻放在金色的馬糞中，</p>
+                <p>睡吧！腳尖一踢：我們就飛起來了，</p>
+                <p>您想跟我一起玩嗎？</p>
+                <p>摩押女子，配戴藍十字勳章的女士。</p>
+                <p>商隊大篷車。</p>
+                <p>香草、胡椒、羅望子果醬，</p>
+                <p>水手、脖子、絨球、鬍鬚、曼陀林琴，</p>
+                <p>錯視畫風格的油布地毯。謝謝，</p>
+                <p>電影，嶄新的繆思女神。</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 頁面 7：曲目 4 - 保姆 -->
+    <div class="page">
+        <div class="page-content">
+            <h2 class="slide-title">演出曲目</h2>
+            <div class="composer-title">法蘭西斯·浦朗克</div>
+            <div class="lyric-title">Bonne d'enfant 保姆</div>
+            
+            <div class="lyrics-original">
+                <p>Técla: notre âge d'or.,</p>
+                <p>"Pipe, Carnot, Joffre",</p>
+                <p>J'offre à toute personne ayant des névralgies...,</p>
+                <p>Girafe. Noce. Un bonjour de Gustave,</p>
+                <p>"Ave Maria de Gounod, ",</p>
+                <p>Rosière,</p>
+                <p>"Air de Mayol, Touring Club, ",</p>
+                <p>Phonographe,</p>
+                <p>"Affiche, crime en couleurs",</p>
+                <p>Piano mécanique,</p>
+                <p>Nick Carter; ,</p>
+                <p>C'est du joli!,</p>
+                <p>"Liberté, Égalité, Fraternité"</p>
+            </div>
+
+            <div class="lyrics-translation">
+                <p>泰克拉珍珠：我們的黃金時代。</p>
+                <p>菸斗、卡諾總統、霞飛元帥，</p>
+                <p>我提供給所有患有神經痛的人……</p>
+                <p>長頸鹿。婚禮。古斯塔夫的問候，</p>
+                <p>古諾的聖母頌，玫瑰少女，</p>
+                <p>馬約爾的曲調，旅遊俱樂部，</p>
+                <p>留聲機，海報，彩色的犯罪新聞，</p>
+                <p>自動鋼琴，尼克·卡特；</p>
+                <p>真是像話！自由，平等，博愛。</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 頁面 8：曲目 5 - 軍中幼童 -->
+    <div class="page">
+        <div class="page-content">
+            <h2 class="slide-title">演出曲目</h2>
+            <div class="composer-title">法蘭西斯·浦朗克</div>
+            <div class="lyric-title">Enfant de troupe 軍中幼童</div>
+            
+            <div class="lyrics-original">
+                <p>"Morceau pour piston seul, polka",</p>
+                <p>"Caramels mous, bonbons acidulés, pastilles de menthe",</p>
+                <p>ENTR'ACTE. L'odeur en sabots,</p>
+                <p>Beau gibier de satin tué par le tambour,</p>
+                <p>"Hambourg, bock, sirop de framboise",</p>
+                <p>Oiseleur de ses propres hands,</p>
+                <p>Intermède; uniforme bleu,</p>
+                <p>Le trapèze encense la mort</p>
+            </div>
+
+            <div class="lyrics-translation">
+                <p>短號獨奏曲，波爾卡，</p>
+                <p>軟焦糖，酸味糖，薄荷錠，</p>
+                <p>中場休息。穿著木屐的氣味，</p>
+                <p>如絲緞般美麗的獵物被鼓聲擊斃。</p>
+                <p>漢堡，黑啤酒，覆盆子糖漿，</p>
+                <p>徒手捕鳥的人。</p>
+                <p>幕間插曲；藍色制服。</p>
+                <p>空中鞦韆頌揚著死亡。</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 頁面 9：曲目 6 - 麥花 -->
+    <div class="page">
+        <div class="page-content">
+            <h2 class="slide-title">演出曲目</h2>
+            <div class="composer-title">克勞德·德布西</div>
+            <div class="lyric-title">Fleur des blés 麥花</div>
+            
+            <div class="lyrics-original">
+                <p>Le long des blés que la brise Fait onduler puis défrise,</p>
+                <p>En un désordre coquet,</p>
+                <p>J’ai trouvé de bonne prise De t’y cueillir un bouquet.,</p>
+                <p>Mets-le vite à ton corsage,</p>
+                <p>Il est fait à ton image En même temps que pour toi …,</p>
+                <p>Ton petit doigt, je le gage, T’a déjà soufflé pourquoi:,</p>
+                <p>Ces épis dorés, c’est l’onde De ta chevelure blonde Toute d’or et de soleil;,</p>
+                <p>Ce coquelicot qui fronde, C’est ta bouche au sang vermeil.,</p>
+                <p>Et ces bluets, beau mystère! Points d’azur que rien n’altère,</p>
+                <p>Ces bluets ce sont tes yeux, Si bleus qu’on dirait, sur terre, Deux éclats tombés des cieux.</p>
+            </div>
+
+            <div class="lyrics-translation">
+                <p>沿著麥田，微風使其波動而後又撫平，</p>
+                <p>呈現出一種嬌俏的凌亂，</p>
+                <p>我覺得正是良機在那裡為妳採摘一束花。</p>
+                <p>快把它別在妳的衣襟上，</p>
+                <p>它是妳的寫照同時也是為妳而作……</p>
+                <p>我敢打賭，妳的小指頭已經悄悄告訴了妳原因：</p>
+                <p>這些金色的麥穗，是來自妳金髮的波浪，充滿了黃金與陽光；</p>
+                <p>這朵傲然綻放的罌粟花，是妳那殷紅如血的嘴唇。</p>
+                <p>而這些矢車菊，美麗的謎！永不褪色的湛藍斑點，</p>
+                <p>這些矢車菊就是妳的雙眼，如此湛藍，</p>
+                <p>彷彿是人間，兩片從天堂墜落的碎片。</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 頁面 10：曲目 7 - 皮耶霍 -->
+    <div class="page">
+        <div class="page-content">
+            <h2 class="slide-title">演出曲目</h2>
+            <div class="composer-title">克勞德·德布西</div>
+            <div class="lyric-title">Pierrot 皮耶霍</div>
+            
+            <div class="lyrics-original">
+                <p>Le bon Pierrot, que la foule contemple, Ayant fini les noces d’Arlequin, Suit en songeant le boulevard du Temple.</p>
+                <p>Une fillette au souple casaquin En vain l’agace de son œil coquin;</p>
+                <p>Et cependant mystérieuse et lisse, Faisant de lui sa plus chère délice,</p>
+                <p>La blanche lune aux cornes de taureau, Jette un regard de son œil en coulisse,</p>
+                <p>À son ami Jean Gaspard Deburau.</p>
+            </div>
+
+            <div class="lyrics-translation">
+                <p>善良的皮耶霍，受群眾所注視，</p>
+                <p>剛結束了哈利昆的婚禮，沿著聖殿大道若有所思地走著。</p>
+                <p>一位身穿柔軟短衫的少女徒勞地用她那調皮的眼神逗弄他；</p>
+                <p>然而，那神祕而皎潔的、視他為其最珍愛樂事的——</p>
+                <p>那有著公牛尖角的白色月亮，正從幕後投去一瞥，</p>
+                <p>給她的朋友尚-加斯帕·德布侯。</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 頁面 11：曲目 8 - 顯現 -->
+    <div class="page">
+        <div class="page-content">
+            <h2 class="slide-title">演出曲目</h2>
+            <div class="composer-title">克勞德·德布西</div>
+            <div class="lyric-title">Apparition 顯現</div>
+            
+            <div class="lyrics-original">
+                <p>La lune s’attristait.,</p>
+                <p>Des séraphins en pleurs Rêvant, l’archet aux doigts, dans le calme des fleurs Vaporeuses,,</p>
+                <p>tiraient de mourantes violes De blancs sanglots glissant sur l’azur des corolles.,</p>
+                <p>C’était le jour béni de ton premier baiser.,</p>
+                <p>Ma songerie aimant à me martyriser S’enivrait savamment du parfum de tristesse,</p>
+                <p>Que même sans regret et sans déboire laisse La cueillaison d’un Rêve au cœur qui l’a cueilli.,</p>
+                <p>J’errais donc, l’œil rivé sur le pavé vieilli,,</p>
+                <p>Quand avec du soleil aux cheveux, dans la rue Et dans le soir, tu m’es en riant apparue,</p>
+                <p>Et j’ai cru voir la fée au chapeau de clarté,</p>
+                <p>Qui jadis sur mes beaux sommeils d’enfant gâté Passait, laissant toujours de ses mains mal fermées,</p>
+                <p>Neiger de blancs bouquets d’étoiles parfumées.</p>
+            </div>
+
+            <div class="lyrics-translation">
+                <p>月色正憂傷。</p>
+                <p>哭泣的天使們，拿著琴弓，在寧靜的花叢中做著夢，在朦朧的花影裡，</p>
+                <p>撥弄著微弱的琴弦，奏出一陣純白的低泣，滑過湛藍的花瓣。</p>
+                <p>那是個美好的日子，妳給了我第一個吻。</p>
+                <p>我那喜歡自尋煩惱的思緒，正刻意地沉醉在一股憂傷的氣息裡；</p>
+                <p>那是即使沒有遺憾、也無挫折，在心靈採擷了夢想之後，仍會留下的餘韻。</p>
+                <p>於是我徘徊著，雙眼緊盯著陳舊的石板路，</p>
+                <p>這時，妳頂著滿頭陽光，在街頭、在暮色之中，笑著出現在我面前。</p>
+                <p>我恍惚看見了那位戴著光之帽的仙女，</p>
+                <p>她曾在往昔，在我那受寵孩童的甜美睡夢中，翩然走過，</p>
+                <p>並總從她那半掩的手掌間，灑落如雪片般、芬芳的白色星群。</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 頁面 12：曲目 9 - 鬥牛士 -->
+    <div class="page">
+        <div class="page-content">
+            <h2 class="slide-title">演出曲目</h2>
+            <div class="composer-title">法蘭西斯·浦朗克</div>
+            <div class="lyric-title">Toréador 鬥牛士</div>
+            
+            <div class="lyrics-original">
+                <p>Pépita reine de Venise Quand tu vas sous ton mirador,</p>
+                <p>Tous les gondoliers se disent: Prends garde... Toréador!,</p>
+                <p>Sur ton cœur personne ne règne Dans le grand palais où tu dors,</p>
+                <p>Et près de toi la vieille duègne Guette le Toréador.,</p>
+                <p>Toréador brave des braves Lorsque sur la place Saint marc,</p>
+                <p>Le taureau en fureur qui bave Tombe tué par ton poignard.,</p>
+                <p>Ce n’est pas l’orgueil qui caresse Ton coeur sous la baouta d’or,</p>
+                <p>Car pour une jeune déesse Tu brûles Toréador.,</p>
+                <p>Sous ta mantille Oeil qui pétille Bouche qui brille C’est Pépita.,</p>
+                <p>C’est demain jour de Saint Escure Qu’aura lieu le combat à mort,</p>
+                <p>Le canal est plein de voitures Fêtant le Toréador!,</p>
+                <p>De Venise plus d’une belle Palpite pour savoir ton sort,</p>
+                <p>Mais tu méprises leurs dentelles Tu souffres Toréador.</p>
+            </div>
+
+            <div class="lyrics-translation">
+                <p>佩皮塔，威尼斯的女王，當妳走下妳的觀景台，</p>
+                <p>所有的貢多拉船夫都低語著：「當心啊……鬥牛士！」</p>
+                <p>無人能統治妳的心，在妳沈睡的宏偉宮殿裡；</p>
+                <p>妳身旁的年邁女管家，正監視著鬥牛士。</p>
+                <p>鬥牛士，勇士中的勇士，當他在聖馬可廣場上，</p>
+                <p>那頭垂著口水的狂怒公牛，應聲倒在你的匕首之下。</p>
+                <p>那並非傲氣在撫慰著你那金色面具下的內心；</p>
+                <p>因為為了那年輕的女神，鬥牛士，你正燃燒著熱情。</p>
+                <p>在妳的蕾絲頭紗下，閃爍的雙眼，發亮的雙唇，那就是佩皮塔。</p>
+                <p>明天就是聖埃斯庫爾節殊死決鬥即將上演；</p>
+                <p>運河上擠滿了車輛，都在為鬥牛士歡慶喝采！</p>
+                <p>威尼斯不只一位佳麗，為得知你的命運而心跳不已，</p>
+                <p>但你卻蔑視她們那一身華麗的蕾絲衣裳，你正痛苦著，鬥牛士。</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 頁面 13：曲目 10 - 浪漫之歌 -->
+    <div class="page">
+        <div class="page-content">
+            <h2 class="slide-title">演出曲目</h2>
+            <div class="composer-title">法蘭西斯·浦朗克</div>
+            <div class="lyric-title">Air romantique 浪漫之歌</div>
+            
+            <div class="lyrics-original">
+                <p>J’allais dans la campagne avec le vent d’orage, Sous le pâle matin, sous les nuages bas,,</p>
+                <p>Un corbeau ténébreux escortait mon voyage Et dans les flaques d’eau retentissaient mes pas.,</p>
+                <p>La foudre à l’horizon faisait courir sa flamme Et l’Aquilon doublait ses longs gémissements;,</p>
+                <p>Mais la tempête était trop faible pour mon âme, Qui couvrait le tonnerre with ses battements.,</p>
+                <p>De la dépouille d’or du frêne et de l’érable L’Automne composait son éclatant butin,,</p>
+                <p>Et le corbeau toujours, d’un vol inexorable, M’accompagnait sans rien changer à mon destin.</p>
+            </div>
+
+            <div class="lyrics-translation">
+                <p>我迎著暴風，獨自漫步在鄉間，在蒼白的清晨，在低垂的雲層下，</p>
+                <p>一隻陰鬱的烏鴉沿路伴我而行，我的腳步聲，在積水的坑洞中迴盪。</p>
+                <p>地平線上的閃電竄著火光，北風加倍地發出長長的哀鳴；</p>
+                <p>但這場風暴，比起我的靈魂仍顯微弱，因為我心跳的搏動，比雷聲還要響亮。</p>
+                <p>用白蠟樹與楓樹褪下的金色殘葉，秋天編織成它那燦爛的戰利品；</p>
+                <p>而那隻烏鴉，始終冷酷而堅定地飛著，與我同行，卻對我的命運無動於衷。</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 頁面 14：曲目 11 - 田園之歌 -->
+    <div class="page">
+        <div class="page-content">
+            <h2 class="slide-title">演出曲目</h2>
+            <div class="composer-title">法蘭西斯·浦朗克</div>
+            <div class="lyric-title">Air champêtre 田園之歌</div>
+            
+            <div class="lyrics-original">
+                <p>Belle source, je veux me rappeler sans cesse, Qu’un jour guidé par l’amitié,,</p>
+                <p>Ravi, j’ai contemplé ton visage, ô déesse, Perdu sous la mousse à moitié.,</p>
+                <p>Que n’est-il demeuré, cet ami que je pleure, O nymphe, à ton culte attaché,</p>
+                <p>Pour se mêler encore au souffle qui t’effleure Et répondre à ton flot caché.</p>
+            </div>
+
+            <div class="lyrics-translation">
+                <p>美麗的泉水，我願無休止地回憶，某日，在友誼的指引下，</p>
+                <p>我狂喜地凝視著妳的容顏，噢！女神，妳那半掩於青苔下的面容。</p>
+                <p>為何他未能長留，這位我所哀悼的摯友，噢！水仙，他曾如此虔誠於妳，</p>
+                <p>願能再次融入那輕拂妳的氣息，並回應妳那隱秘的波流。</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 頁面 15：中場休息 -->
+    <div class="page">
+        <div class="page-content">
+            <div class="intermission">
+                <i class="fa-solid fa-mug-hot" style="font-size: 40px; color: #E5DCCB; margin-bottom: 20px;"></i>
+                <h2 style="font-size: 32px; letter-spacing: 4px;">中場休息</h2>
+                <p style="font-size: 18px; color: #888; font-family: 'Playfair Display', serif; margin-top: 10px;">Intermission</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 頁面 16：曲目 12 - 帝國女神 -->
+    <div class="page">
+        <div class="page-content">
+            <h2 class="slide-title">演出曲目</h2>
+            <div class="composer-title">艾瑞克·薩提</div>
+            <div class="lyric-title">La diva de l'empire 帝國女神</div>
+            
+            <div class="lyrics-original">
+                <p>Sous le grand chapeau Greenaway, Mettant l'éclat d'un sourire,,</p>
+                <p>D'un rire charmant et frais De baby étonné qui soupire,,</p>
+                <p>Little girl aux yeux veloutés, C'est la Diva de l'Empire.,</p>
+                <p>C'est la rein' dont s'éprennent Les gentlemen Et tous les dandys De Piccadilly.,</p>
+                <p>Dans un seul "yes" elle mettant de douceur Que tous les snobs en gilet à coeur,,</p>
+                <p>L'accueillant des hourras frénétiques, Sur la scène lancent des gerbes de fleurs,,</p>
+                <p>Sans remarquer le rire narquois De son joli minois.,</p>
+                <p>Elle danse presque automatiquement Et soulève, oh très pudiquement,,</p>
+                <p>Ses jolis dessous de fanfreluches, De ses jambes montrant le frétillement.,</p>
+                <p>C'est à la fois très très innocent Et très très excitant.</p>
+            </div>
+
+            <div class="lyrics-translation">
+                <p>在那頂巨大的格林威寬帽簷下，綻放著燦爛的笑容，</p>
+                <p>帶著迷人而清新的笑意，像個驚訝嘆息的嬰孩，</p>
+                <p>這位有著絲絨般雙眼的小女孩，就是「帝國劇院」的女神。</p>
+                <p>她是令眾人傾倒的女王，無論是紳士們，還是所有的紈絝子弟，那些來自皮卡迪利廣場的人們。</p>
+                <p>她在一個單字「Yes」裡傾注了如此多的甜美，令所有穿著心領背心的勢利眼們，</p>
+                <p>用狂熱的歡呼迎接她，紛紛向舞台上拋擲花束，</p>
+                <p>卻沒留意到那嘲弄的笑意，在她那嬌俏的臉龐上。</p>
+                <p>她近乎機械式地跳舞，並且撩起，噢，極其矜持地，</p>
+                <p>她那裝飾著繁複花邊的襯裙，露出她那擺動的雙腿。</p>
+                <p>這同時既非常非常天真，又非常非常撩人。</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 頁面 17：曲目 13 - 星夜 -->
+    <div class="page">
+        <div class="page-content">
+            <h2 class="slide-title">演出曲目</h2>
+            <div class="composer-title">克勞德·德布西</div>
+            <div class="lyric-title">Nuit d'étoiles 星夜</div>
+            
+            <div class="lyrics-original">
+                <p>Nuit d’étoiles, Sous tes voiles, Sous ta brise et tes parfums,,</p>
+                <p>Triste lyre qui soupire, Je rêve aux amours défunts.,</p>
+                <p>La sereine mélancolie Vient éclore au fond de mon cœur,,</p>
+                <p>Et j’entends l’âme de ma mie Tressaillir dans le bois rêveur.,</p>
+                <p>Je revois à notre fontaine Tes regards bleus comme les cieux;,</p>
+                <p>Cette rose, c’est ton haleine, Et ces étoiles sont tes yeux.</p>
+            </div>
+
+            <div class="lyrics-translation">
+                <p>星夜，在妳的面紗下，在妳的微風與芬芳裡，</p>
+                <p>悲傷的里拉琴發出嘆息，我夢想著已逝的愛情。</p>
+                <p>寧靜的憂鬱在我心深處綻放，</p>
+                <p>而我聽見我愛人的靈魂在夢幻的樹林中顫動。</p>
+                <p>我在我們的泉水邊重見妳那如蒼天般湛藍的目光；</p>
+                <p>這朵玫瑰，是妳的氣息，而這些星星是妳的雙眼。</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 頁面 18：曲目 14 - 海鷗女王 -->
+    <div class="page">
+        <div class="page-content">
+            <h2 class="slide-title">演出曲目</h2>
+            <div class="composer-title">法蘭西斯·浦朗克</div>
+            <div class="lyric-title">Reine des mouettes 海鷗女王</div>
+            
+            <div class="lyrics-original">
+                <p>Reine des mouettes, mon orpheline Je t'ai vue rose, je m'en souviens,</p>
+                <p>Sous les brumes mousselines De ton deuil ancien.,</p>
+                <p>Rose d'aimer le baiser qui chagrine Tu te laissais accorder à mes mains,</p>
+                <p>Sous les brumes mousselines Voiles de nos liens.,</p>
+                <p>Rougis, rougis mon baiser te devine Mouette prise aux nœuds des grands chemins.,</p>
+                <p>Reine des mouettes, mon orpheline Tu étais rose, accordée à mes mains,</p>
+                <p>Rose sous les mousselines Et je m'en souviens.</p>
+            </div>
+
+            <div class="lyrics-translation">
+                <p>海鷗女王，我的孤女，我看過雙頰緋紅的妳，我仍記得</p>
+                <p>在薄紗般的迷霧之下，透著妳往日的喪慟。</p>
+                <p>因愛上那令人感傷的吻而緋紅，妳曾任由自己順從於我的雙手，</p>
+                <p>在薄紗般的迷霧之下，是我們羈絆的面紗。</p>
+                <p>羞紅吧，羞紅吧，我的吻已看穿了妳，被困在大道交錯處的海鷗</p>
+                <p>海鷗女王，我的孤女，妳曾是那樣緋紅，順從於我的雙手，</p>
+                <p>在那薄紗下的緋紅，而我，仍舊記得。</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 頁面 19：曲目 15 - 悲歌 -->
+    <div class="page">
+        <div class="page-content">
+            <h2 class="slide-title">演出曲目</h2>
+            <div class="composer-title">亨利·迪帕克</div>
+            <div class="lyric-title">Chanson triste 悲歌</div>
+            
+            <div class="lyrics-original">
+                <p>Dans ton cœur dort un clair de lune, Un doux clair de lune d’été,,</p>
+                <p>Et pour fuir la vie importune, Je me noierai dans ta clarté.,</p>
+                <p>J’oublierai les douleurs passées, Mon amour, quand tu berceras,</p>
+                <p>Mon triste cœur et mes pensées Dans le calme aimant de tes bras.,</p>
+                <p>Tu prendras ma tête malade, Oh! quelquefois sur tes genoux,,</p>
+                <p>Et lui diras une ballade Qui semblera parler de nous;,</p>
+                <p>Et dans tes yeux pleins de tristesses, Dans tes yeux alors je boirai,</p>
+                <p>Tant de baisers et de tendresses Que peut-être je guérirai.</p>
+            </div>
+
+            <div class="lyrics-translation">
+                <p>在妳心中沉睡著一道月光，一道夏日溫柔的月光，</p>
+                <p>為了逃離這紛擾的生活，我將讓自己沉沒在妳的光輝裡。</p>
+                <p>我將忘卻往昔的痛苦，我的愛人，當妳輕搖著</p>
+                <p>我悲傷的心與我的思緒，在妳雙臂那充滿愛意的寧靜中。</p>
+                <p>妳將捧起我疲憊的頭，噢！有時將它枕在妳的膝上，</p>
+                <p>並對它吟唱一首歌謠，那曲子彷彿是在訴說著我們；</p>
+                <p>而在妳那充滿憂愁的眼眸裡，在妳的眼眸中，屆時我將汲取</p>
+                <p>無盡的吻與柔情，或許，我就能因此痊癒。</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 頁面 20：活動資訊 -->
+    <div class="page">
+        <div class="page-content">
+            <h2 class="slide-title">活動資訊</h2>
+            <h3 style="font-size: 20px; text-align: center; margin-top: 30px;"><i class="fa-regular fa-calendar"></i> 活動預告</h3>
+            <p style="text-align: center; margin-top: 15px;"><strong>2026.12.17 四</strong><br>臺北國家演奏廳<br><span style="color: #8B5A2B;">女高音蔡澐宣獨唱會</span></p>
+
+            <h3 style="font-size: 20px; text-align: center; margin-top: 50px;"><i class="fa-solid fa-users"></i> 工作團隊</h3>
+            <div style="text-align: center; line-height: 2; color: #444; margin-top: 15px;">
+                執行製作｜就是愛樂管弦樂團<br>
+                平面設計｜吳揚昕<br>
+                錄音錄影｜陳富順<br>
+                妝髮｜朱家蕎<br>
+                舞台助手｜郭晉宇
+            </div>
+            
+            <div style="margin-top: 60px; text-align: center; border-top: 1px dashed #D3C9B8; padding-top: 30px;">
+                <p style="font-family: 'Playfair Display', serif; font-size: 24px; color: #8B5A2B; margin-bottom: 5px;">– Good Night –</p>
+                <p style="font-size: 14px; color: #888;">期待再次相見</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 翻頁控制 -->
+    <div class="page-controls">
+        <button class="nav-btn" id="prev-btn"><i class="fa-solid fa-chevron-left"></i></button>
+        <div class="page-indicator"><span id="current-page-num">1</span> / <span id="total-pages-num">20</span></div>
+        <button class="nav-btn" id="next-btn"><i class="fa-solid fa-chevron-right"></i></button>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const pages = document.querySelectorAll('.page');
+        const totalPages = pages.length;
+        let currentPageIndex = 0;
+        
+        const prevBtn = document.getElementById('prev-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const currentNumEl = document.getElementById('current-page-num');
+        const totalNumEl = document.getElementById('total-pages-num');
+        
+        totalNumEl.textContent = totalPages;
+
+        function turnPage(direction) {
+            const newIndex = currentPageIndex + direction;
+            if (newIndex < 0 || newIndex >= totalPages) return;
+            
+            pages.forEach((p, idx) => {
+                p.classList.remove('active', 'prev');
+                const content = p.querySelector('.page-content');
+                if(content) content.scrollTop = 0; 
+                
+                if (idx < newIndex) {
+                    p.classList.add('prev');
+                    p.style.transform = 'translateX(-100%)';
+                } else if (idx > newIndex) {
+                    p.style.transform = 'translateX(100%)';
+                }
+            });
+            
+            pages[newIndex].classList.add('active');
+            pages[newIndex].style.transform = 'translateX(0)';
+            currentPageIndex = newIndex;
+            updateControls();
+        }
+        
+        function updateControls() {
+            currentNumEl.textContent = currentPageIndex + 1;
+            prevBtn.disabled = currentPageIndex === 0;
+            nextBtn.disabled = currentPageIndex === totalPages - 1;
+        }
+
+        prevBtn.addEventListener('click', () => turnPage(-1));
+        nextBtn.addEventListener('click', () => turnPage(1));
+
+        let startX = 0;
+        document.getElementById('book-container').addEventListener('touchstart', (e) => {
+            startX = e.changedTouches[0].screenX;
+        }, {passive: true});
+
+        document.getElementById('book-container').addEventListener('touchend', (e) => {
+            const endX = e.changedTouches[0].screenX;
+            const diff = endX - startX;
+            if (Math.abs(diff) > 50) {
+                if (diff < 0) turnPage(1);
+                else turnPage(-1);
+            }
+        }, {passive: true});
+    });
+</script>
+
+</body>
+</html>
